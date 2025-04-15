@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -7,6 +7,8 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
+  Platform,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,6 +36,7 @@ const MilestonesMap = () => {
     latitudeDelta: 0.2,
     longitudeDelta: 0.2,
   });
+  const mapRef = useRef<MapView>(null);
 
   // Fetch all milestones
   useEffect(() => {
@@ -209,6 +212,7 @@ const MilestonesMap = () => {
 
       <View style={styles.mapContainer}>
         <MapView
+          ref={mapRef}
           style={styles.map}
           region={region}
           onRegionChangeComplete={setRegion}
@@ -228,19 +232,31 @@ const MilestonesMap = () => {
                 }}
                 pinColor={milestone.favorite ? "#FFD700" : "#0066CC"}
                 title={milestone.name}
+                description={
+                  Platform.OS === "android" ? "Tap to view details" : undefined
+                }
+                onCalloutPress={() => handleMilestonePress(milestone)}
               >
-                <Callout onPress={() => handleMilestonePress(milestone)}>
-                  <View style={styles.callout}>
-                    <Text style={styles.calloutTitle}>{milestone.name}</Text>
-                    <Text style={styles.calloutSubtitle}>
-                      {new Date(milestone.createdAt).toLocaleDateString()}
-                    </Text>
-                    <View style={styles.calloutAction}>
-                      <Ionicons name="eye-outline" size={14} color="#0066CC" />
-                      <Text style={styles.calloutActionText}>View Details</Text>
+                {Platform.OS === "ios" && (
+                  <Callout onPress={() => handleMilestonePress(milestone)}>
+                    <View style={styles.callout}>
+                      <Text style={styles.calloutTitle}>{milestone.name}</Text>
+                      <Text style={styles.calloutSubtitle}>
+                        {new Date(milestone.createdAt).toLocaleDateString()}
+                      </Text>
+                      <View style={styles.calloutAction}>
+                        <Ionicons
+                          name="eye-outline"
+                          size={14}
+                          color="#0066CC"
+                        />
+                        <Text style={styles.calloutActionText}>
+                          View Details
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                </Callout>
+                  </Callout>
+                )}
               </Marker>
             );
           })}
@@ -316,12 +332,14 @@ const styles = StyleSheet.create({
   },
   callout: {
     padding: 8,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 200,
   },
   calloutTitle: {
     fontWeight: "bold",
     fontSize: 14,
     marginBottom: 2,
+    color: "#333",
   },
   calloutSubtitle: {
     fontSize: 12,
@@ -332,6 +350,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingTop: 6,
+    paddingBottom: 2,
     borderTopWidth: 1,
     borderTopColor: "#EEE",
   },
@@ -339,6 +358,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#0066CC",
     marginLeft: 4,
+  },
+  androidCalloutActionText: {
+    fontSize: 12,
+    color: "#FFFFFF",
+    marginLeft: 4,
+    fontWeight: "500",
   },
   errorText: {
     marginTop: 12,
