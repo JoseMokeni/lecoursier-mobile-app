@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,9 +6,18 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  Dimensions,
+  Platform,
+  KeyboardAvoidingView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import MapView, { Marker, MapPressEvent } from "react-native-maps";
+import * as Location from "expo-location";
+
+const { width } = Dimensions.get("window");
 
 const NewMilestone = () => {
   const router = useRouter();
@@ -16,22 +25,158 @@ const NewMilestone = () => {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [markerPosition, setMarkerPosition] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [initialRegion, setInitialRegion] = useState({
+    latitude: 0,
+    longitude: 0,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+  const [locationPermissionGranted, setLocationPermissionGranted] =
+    useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Request location permission and get current location on mount
+  useEffect(() => {
+    const getLocationPermission = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission denied",
+            "Location permission is required to get your current position"
+          );
+          return;
+        }
+
+        setLocationPermissionGranted(true);
+
+        const location = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = location.coords;
+
+        setInitialRegion({
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+      } catch (error) {
+        console.error("Error getting location permission:", error);
+        Alert.alert("Error", "Failed to get your current location");
+      }
+    };
+
+    getLocationPermission();
+  }, []);
+
+  // Handle map press to set marker position
+  const handleMapPress = (e: MapPressEvent) => {
+    const { coordinate } = e.nativeEvent;
+    setMarkerPosition(coordinate);
+    setLatitude(coordinate.latitude.toString());
+    setLongitude(coordinate.longitude.toString());
+  };
+
+  // Center map on current location
+  const goToCurrentLocation = async () => {
+    if (!locationPermissionGranted) {
+      Alert.alert(
+        "Permission denied",
+        "Location permission is required to get your current position"
+      );
+      return;
+    }
+
+    try {
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      setInitialRegion({
+        latitude,
+        longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+
+      // Optional: also set the marker to current position
+      // setMarkerPosition({ latitude, longitude });
+      // setLatitude(latitude.toString());
+      // setLongitude(longitude.toString());
+    } catch (error) {
+      console.error("Error getting current location:", error);
+      Alert.alert("Error", "Failed to get your current location");
+    }
+  };
 
   const handleSubmit = async () => {
-    // Here you would implement the API call to create a new milestone
-    console.log("Creating new milestone:", {
-      name,
-      latitude,
-      longitude,
-      isFavorite,
-    });
+    if (!name.trim()) {
+      Alert.alert(
+        "Missing information",
+        "Please enter a name for the milestone"
+      );
+      return;
+    }
 
-    // Navigate back to milestones list
-    router.back();
+    if (!latitude || !longitude) {
+      Alert.alert("Missing coordinates", "Please select a location on the map");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
+
+      const API_ENDPOINT = `${process.env.EXPO_PUBLIC_API_URL}/milestones`;
+      const tenantId: string = "belect";
+      const token = "1|cPlnvctoT3tqpHwpwW3tXvaR72rBYc2hKgNqwMd603ab42b4";
+
+      const response = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-tenant-id": tenantId,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name,
+          latitudinal: latitude,
+          longitudinal: longitude,
+          favorite: isFavorite,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("API Error:", errorData);
+        throw new Error(errorData.message || "Failed to create milestone");
+      }
+
+      const data = await response.json();
+      console.log("Milestone created successfully:", data);
+
+      // Show success message
+      Alert.alert("Success", "Milestone created successfully!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (error: any) {
+      console.error("Error creating milestone:", error);
+      setSubmitError(error.message || "Failed to create milestone");
+      Alert.alert("Error", error.message || "Failed to create milestone");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -51,23 +196,86 @@ const NewMilestone = () => {
           placeholder="Enter milestone name"
         />
 
-        <Text style={styles.label}>Latitude</Text>
-        <TextInput
-          style={styles.input}
-          value={latitude}
-          onChangeText={setLatitude}
-          placeholder="Enter latitude"
-          keyboardType="numeric"
-        />
+        <Text style={styles.mapLabel}>
+          Select Location (tap on map to place marker)
+        </Text>
+        <View style={styles.mapContainer}>
+          <MapView
+            style={styles.map}
+            initialRegion={initialRegion}
+            region={initialRegion}
+            onPress={handleMapPress}
+          >
+            {markerPosition && (
+              <Marker
+                coordinate={markerPosition}
+                title="Selected Location"
+                draggable
+                onDragEnd={(e) => {
+                  setMarkerPosition(e.nativeEvent.coordinate);
+                  setLatitude(e.nativeEvent.coordinate.latitude.toString());
+                  setLongitude(e.nativeEvent.coordinate.longitude.toString());
+                }}
+              />
+            )}
+          </MapView>
+          <TouchableOpacity
+            style={styles.currentLocationButton}
+            onPress={goToCurrentLocation}
+          >
+            <Ionicons name="locate" size={24} color="#0066CC" />
+          </TouchableOpacity>
+        </View>
 
-        <Text style={styles.label}>Longitude</Text>
-        <TextInput
-          style={styles.input}
-          value={longitude}
-          onChangeText={setLongitude}
-          placeholder="Enter longitude"
-          keyboardType="numeric"
-        />
+        <View style={styles.coordinatesContainer}>
+          <View style={styles.coordinateField}>
+            <Text style={styles.label}>Latitude</Text>
+            <TextInput
+              style={styles.input}
+              value={latitude}
+              onChangeText={(text) => {
+                setLatitude(text);
+                if (
+                  text &&
+                  longitude &&
+                  !isNaN(parseFloat(text)) &&
+                  !isNaN(parseFloat(longitude))
+                ) {
+                  setMarkerPosition({
+                    latitude: parseFloat(text),
+                    longitude: parseFloat(longitude),
+                  });
+                }
+              }}
+              placeholder="Enter latitude"
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.coordinateField}>
+            <Text style={styles.label}>Longitude</Text>
+            <TextInput
+              style={styles.input}
+              value={longitude}
+              onChangeText={(text) => {
+                setLongitude(text);
+                if (
+                  latitude &&
+                  text &&
+                  !isNaN(parseFloat(latitude)) &&
+                  !isNaN(parseFloat(text))
+                ) {
+                  setMarkerPosition({
+                    latitude: parseFloat(latitude),
+                    longitude: parseFloat(text),
+                  });
+                }
+              }}
+              placeholder="Enter longitude"
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
 
         <TouchableOpacity
           style={styles.favoriteToggle}
@@ -81,11 +289,29 @@ const NewMilestone = () => {
           <Text style={styles.favoriteText}>Mark as favorite</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Create Milestone</Text>
+        {submitError && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={20} color="#FF3B30" />
+            <Text style={styles.errorText}>{submitError}</Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            isSubmitting && styles.submitButtonDisabled,
+          ]}
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Text style={styles.submitButtonText}>Create Milestone</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -121,6 +347,12 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 8,
   },
+  mapLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+    marginVertical: 12,
+  },
   input: {
     backgroundColor: "#FFF",
     padding: 12,
@@ -129,6 +361,41 @@ const styles = StyleSheet.create({
     borderColor: "#DDD",
     fontSize: 16,
     marginBottom: 16,
+  },
+  mapContainer: {
+    height: 300,
+    borderRadius: 8,
+    overflow: "hidden",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  map: {
+    height: "100%",
+    width: "100%",
+  },
+  currentLocationButton: {
+    position: "absolute",
+    right: 16,
+    bottom: 16,
+    backgroundColor: "white",
+    borderRadius: 30,
+    width: 48,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  coordinatesContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  coordinateField: {
+    width: "48%",
   },
   favoriteToggle: {
     flexDirection: "row",
@@ -146,6 +413,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 24,
+    marginBottom: 40,
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#88AEDD",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFEEEE",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    marginLeft: 8,
+    color: "#FF3B30",
+    flex: 1,
   },
   submitButtonText: {
     color: "#FFF",

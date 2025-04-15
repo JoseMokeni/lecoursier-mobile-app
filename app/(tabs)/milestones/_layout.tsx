@@ -12,6 +12,7 @@ const MilestonesLayout = () => {
       <Stack.Screen name="new" options={{ title: "New Milestone" }} />
       <Stack.Screen name="edit" options={{ title: "Edit Milestone" }} />
       <Stack.Screen name="details" options={{ title: "Milestone Details" }} />
+      <Stack.Screen name="map" options={{ title: "Map" }} />
     </Stack>
   );
 };

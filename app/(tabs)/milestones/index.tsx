@@ -90,8 +90,8 @@ const Milestones = () => {
       fetchMilestones();
 
       return () => {
-        setMilestones([]);
-        setLoading(true);
+        // Only reset error state but keep the milestones list
+        // This ensures smoother transitions when returning from edit/delete
         setError(null);
       };
     }, [])
@@ -164,7 +164,22 @@ const Milestones = () => {
     const formattedDate = new Date(item.createdAt).toLocaleDateString();
 
     return (
-      <TouchableOpacity style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() =>
+          router.push({
+            pathname: "/milestones/details",
+            params: {
+              id: item.id,
+              name: item.name,
+              lat: item.latitudinal,
+              lng: item.longitudinal,
+              createdAt: item.createdAt,
+              favorite: item.favorite,
+            },
+          })
+        }
+      >
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>{item.name}</Text>
           {item.favorite ? (
@@ -220,7 +235,16 @@ const Milestones = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Milestones</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Milestones</Text>
+        <TouchableOpacity
+          style={styles.mapViewButton}
+          onPress={() => router.push("/milestones/map")}
+        >
+          <Ionicons name="map-outline" size={20} color="#0066CC" />
+          <Text style={styles.mapViewText}>Map View</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -321,11 +345,30 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#F5F5F5",
   },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 16,
     color: "#333",
+  },
+  mapViewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E6F0FF",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  mapViewText: {
+    marginLeft: 4,
+    color: "#0066CC",
+    fontWeight: "500",
+    fontSize: 14,
   },
   filterContainer: {
     backgroundColor: "#FFF",
