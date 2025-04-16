@@ -79,7 +79,7 @@ const LoginScreen = () => {
               resizeMode="contain"
             />
             <Text style={styles.appName}>Le Coursier</Text>
-            <Text style={styles.tagline}>Delivery Management</Text>
+            <Text style={styles.tagline}>Courier Management</Text>
           </View>
 
           <View style={styles.formContainer}>
