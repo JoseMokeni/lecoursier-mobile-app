@@ -49,6 +49,13 @@ const authService = {
 
       const data: AuthResponse = await response.json();
 
+      // check if the user is an admin
+      if (data.user.role !== "admin") {
+        return {
+          error: "Unauthorized access. Only admins can log in.",
+        };
+      }
+
       // Store auth data locally
       if (data.token && data.user) {
         await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
