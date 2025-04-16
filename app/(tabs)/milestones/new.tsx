@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, MapPressEvent } from "react-native-maps";
 import * as Location from "expo-location";
+import apiService from "../../../services/apiService";
 
 const { width } = Dimensions.get("window");
 
@@ -131,33 +132,14 @@ const NewMilestone = () => {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      const API_ENDPOINT = `${process.env.EXPO_PUBLIC_API_URL}/milestones`;
-      const tenantId: string = "belect";
-      const token = "1|cPlnvctoT3tqpHwpwW3tXvaR72rBYc2hKgNqwMd603ab42b4";
-
-      const response = await fetch(API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-tenant-id": tenantId,
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name,
-          latitudinal: latitude,
-          longitudinal: longitude,
-          favorite: isFavorite,
-        }),
+      const response = await apiService.post("/milestones", {
+        name,
+        latitudinal: latitude,
+        longitudinal: longitude,
+        favorite: isFavorite,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("API Error:", errorData);
-        throw new Error(errorData.message || "Failed to create milestone");
-      }
-
-      const data = await response.json();
-      console.log("Milestone created successfully:", data);
+      console.log("Milestone created successfully:", response);
 
       // Show success message
       Alert.alert("Success", "Milestone created successfully!", [

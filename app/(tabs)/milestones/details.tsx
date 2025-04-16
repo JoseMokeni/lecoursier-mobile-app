@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import apiService from "../../../services/apiService";
 
 const Details = () => {
   const router = useRouter();
@@ -45,23 +46,8 @@ const Details = () => {
   const confirmDelete = async () => {
     try {
       setIsDeleting(true);
-      const API_ENDPOINT = `${process.env.EXPO_PUBLIC_API_URL}/milestones/${id}`;
-      const tenantId: string = "belect";
-      const token = "1|cPlnvctoT3tqpHwpwW3tXvaR72rBYc2hKgNqwMd603ab42b4";
 
-      const response = await fetch(API_ENDPOINT, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "x-tenant-id": tenantId,
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to delete milestone");
-      }
+      await apiService.delete(`/milestones/${id}`);
 
       Alert.alert("Success", "Milestone deleted successfully");
       router.back();

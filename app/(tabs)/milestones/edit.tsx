@@ -15,6 +15,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, MapPressEvent } from "react-native-maps";
 import * as Location from "expo-location";
+import apiService from "../../../services/apiService";
 
 const EditMilestone = () => {
   const router = useRouter();
@@ -128,32 +129,14 @@ const EditMilestone = () => {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      const API_ENDPOINT = `${process.env.EXPO_PUBLIC_API_URL}/milestones/${id}`;
-      const tenantId: string = "belect";
-      const token = "1|cPlnvctoT3tqpHwpwW3tXvaR72rBYc2hKgNqwMd603ab42b4";
-
-      const response = await fetch(API_ENDPOINT, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-tenant-id": tenantId,
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name,
-          latitudinal: latitude,
-          longitudinal: longitude,
-          favorite: isFavorite,
-        }),
+      const response = await apiService.put(`/milestones/${id}`, {
+        name,
+        latitudinal: latitude,
+        longitudinal: longitude,
+        favorite: isFavorite,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update milestone");
-      }
-
-      const data = await response.json();
-      console.log("Milestone updated successfully:", data);
+      console.log("Milestone updated successfully:", response);
 
       Alert.alert("Success", "Milestone updated successfully!", [
         { text: "OK", onPress: () => router.back() },

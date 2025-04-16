@@ -14,6 +14,7 @@ interface AuthResponse {
 
 const AUTH_TOKEN_KEY = "auth_token";
 const USER_DATA_KEY = "user_data";
+const COMPANY_CODE_KEY = "company_code";
 
 const authService = {
   // Login function
@@ -35,7 +36,15 @@ const authService = {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          return {
+            error: "Invalid creadentials",
+          };
+        }
+        throw new Error(
+          errorData.message || `HTTP error! Status: ${response.status}`
+        );
       }
 
       const data: AuthResponse = await response.json();
@@ -44,6 +53,7 @@ const authService = {
       if (data.token && data.user) {
         await AsyncStorage.setItem(AUTH_TOKEN_KEY, data.token);
         await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(data.user));
+        await AsyncStorage.setItem(COMPANY_CODE_KEY, companyCode);
       }
 
       return data;
@@ -69,6 +79,16 @@ const authService = {
     }
   },
 
+  // Get company code
+  getCompanyCode: async (): Promise<string | null> => {
+    try {
+      return await AsyncStorage.getItem(COMPANY_CODE_KEY);
+    } catch (error) {
+      console.error("Error retrieving company code:", error);
+      return null;
+    }
+  },
+
   // Get authentication token
   getToken: async (): Promise<string | null> => {
     try {
@@ -84,6 +104,7 @@ const authService = {
     try {
       await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
       await AsyncStorage.removeItem(USER_DATA_KEY);
+      // Note: You might want to keep the company code for convenience
     } catch (error) {
       console.error("Error during logout:", error);
     }

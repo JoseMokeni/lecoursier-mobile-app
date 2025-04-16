@@ -11,6 +11,7 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import apiService from "../../../services/apiService";
 
 interface Milestone {
   id: number;
@@ -49,34 +50,7 @@ const Milestones = () => {
         try {
           console.log("Fetching milestones...");
 
-          const API_ENDPOINT = `${process.env.EXPO_PUBLIC_API_URL}/milestones`;
-          const tenantId: string = "belect";
-          const token = "1|cPlnvctoT3tqpHwpwW3tXvaR72rBYc2hKgNqwMd603ab42b4";
-
-          const response = await fetch(API_ENDPOINT, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "x-tenant-id": tenantId,
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (!response.ok && response.status === 403) {
-            const errorData = await response.json().catch(() => ({}));
-            if (errorData.message) {
-              console.log("Error message:", errorData.message);
-            }
-            throw new Error(
-              "Access forbidden: You don't have permission to access this resource."
-            );
-          }
-
-          if (response.status === 401) {
-            console.log("Unauthorized access: Invalid token.");
-            throw new Error("Unauthorized access: Invalid token.");
-          }
-
-          const data = await response.json();
+          const data = await apiService.get("/milestones");
           console.log("Fetched milestones:", data);
           setMilestones(processMilestoneData(data));
         } catch (error: any) {

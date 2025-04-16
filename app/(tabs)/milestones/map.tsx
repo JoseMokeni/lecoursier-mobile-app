@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, Callout } from "react-native-maps";
 import * as Location from "expo-location";
+import apiService from "../../../services/apiService";
 
 interface Milestone {
   id: number;
@@ -42,25 +43,7 @@ const MilestonesMap = () => {
   useEffect(() => {
     const fetchMilestones = async () => {
       try {
-        const API_ENDPOINT = `${process.env.EXPO_PUBLIC_API_URL}/milestones`;
-        const tenantId: string = "belect";
-        const token = "1|cPlnvctoT3tqpHwpwW3tXvaR72rBYc2hKgNqwMd603ab42b4";
-
-        const response = await fetch(API_ENDPOINT, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-id": tenantId,
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || "Failed to fetch milestones");
-        }
-
-        const data = await response.json();
+        const data = await apiService.get("/milestones");
         const milestonesData = data.data || data || [];
 
         setMilestones(milestonesData);
