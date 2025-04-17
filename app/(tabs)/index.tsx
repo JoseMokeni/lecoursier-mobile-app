@@ -1,22 +1,225 @@
-import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { useAuth } from "@/context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
+import apiService from "../../services/apiService";
+
+interface Task {
+  id: number;
+  name: string;
+  description: string;
+  priority: string;
+  status: string;
+  dueDate: string | null;
+  completedAt: string | null;
+  userId: number;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    phone: string | null;
+  };
+  milestoneId: number;
+  milestone: {
+    id: number;
+    name: string;
+    longitudinal: string;
+    latitudinal: string;
+    favorite: boolean;
+    createdAt: string;
+    updatedAt: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
 
 const Tasks = () => {
   const { user } = useAuth();
+  const router = useRouter();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchTasks = async () => {
+        try {
+          setLoading(true);
+          const response = await apiService.get("/tasks");
+          setTasks(response.data || []);
+        } catch (err: any) {
+          console.error("Error fetching tasks:", err);
+          setError(err.message || "Failed to load tasks");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchTasks();
+    }, [])
+  );
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case "high":
+        return "#FF3B30";
+      case "medium":
+        return "#FF9500";
+      case "low":
+        return "#34C759";
+      default:
+        return "#777777";
+    }
+  };
+
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "completed":
+        return styles.statusCompleted;
+      case "in_progress":
+        return styles.statusInProgress;
+      case "pending":
+      default:
+        return styles.statusPending;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "in_progress":
+        return "In Progress";
+      case "completed":
+        return "Completed";
+      case "pending":
+      default:
+        return "Pending";
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Not set";
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleTaskPress = (task: Task) => {
+    router.push({
+      pathname: "/tasks/details",
+      params: {
+        id: task.id.toString(),
+        name: task.name,
+        description: task.description,
+        priority: task.priority,
+        status: task.status,
+        dueDate: task.dueDate || "",
+        userId: task.userId.toString(),
+        userName: task.user.username,
+        milestoneId: task.milestoneId.toString(),
+        milestoneName: task.milestone.name,
+        milestoneLongitudinal: task.milestone.longitudinal,
+        milestoneLatitudinal: task.milestone.latitudinal,
+        milestoneFavorite: task.milestone.favorite.toString(),
+        milestoneCreatedAt: task.milestone.createdAt,
+      },
+    });
+  };
+
+  const renderTaskItem = ({ item }: { item: Task }) => (
+    <TouchableOpacity
+      style={styles.taskItem}
+      onPress={() => handleTaskPress(item)}
+    >
+      <View style={styles.taskHeader}>
+        <Text style={styles.taskName}>{item.name}</Text>
+        <View
+          style={[
+            styles.priorityBadge,
+            { backgroundColor: getPriorityColor(item.priority) },
+          ]}
+        >
+          <Text style={styles.priorityText}>{item.priority}</Text>
+        </View>
+      </View>
+
+      <View style={styles.taskDetails}>
+        <View style={styles.detailRow}>
+          <Ionicons name="location-outline" size={16} color="#666" />
+          <Text style={styles.detailText}>{item.milestone.name}</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          <Ionicons name="calendar-outline" size={16} color="#666" />
+          <Text style={styles.detailText}>Due: {formatDate(item.dueDate)}</Text>
+        </View>
+
+        <View style={styles.detailRow}>
+          <Ionicons name="person-outline" size={16} color="#666" />
+          <Text style={styles.detailText}>{item.user.username}</Text>
+        </View>
+      </View>
+
+      <View style={styles.taskFooter}>
+        <View style={getStatusBadgeStyle(item.status)}>
+          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Tasks</Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push("/tasks/new")}
+        >
+          <Ionicons name="add" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
 
-      {user && (
-        <View style={styles.userInfoCard}>
-          <Text style={styles.userName}>Welcome, {user.name}</Text>
-          <Text style={styles.text}>Tasks will appear here</Text>
+      {loading ? (
+        <View style={styles.centerContent}>
+          <ActivityIndicator size="large" color="#0066CC" />
+          <Text style={styles.loadingText}>Loading tasks...</Text>
         </View>
+      ) : error ? (
+        <View style={styles.centerContent}>
+          <Ionicons name="alert-circle-outline" size={48} color="#FF3B30" />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => router.replace("/")}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : tasks.length === 0 ? (
+        <View style={styles.centerContent}>
+          <Ionicons name="clipboard-outline" size={64} color="#CCCCCC" />
+          <Text style={styles.emptyText}>No tasks found</Text>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => router.push("/tasks/new")}
+          >
+            <Text style={styles.createButtonText}>Create Task</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={tasks}
+          renderItem={renderTaskItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+        />
       )}
     </View>
   );
@@ -39,27 +242,138 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
   },
-  userInfoCard: {
+  addButton: {
+    backgroundColor: "#0066CC",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#555",
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#FF3B30",
+    textAlign: "center",
+  },
+  emptyText: {
+    marginTop: 12,
+    fontSize: 18,
+    color: "#999",
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    backgroundColor: "#0066CC",
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  createButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: "#0066CC",
+    borderRadius: 8,
+  },
+  createButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
+  taskItem: {
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    alignItems: "center",
   },
-  userName: {
+  taskHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  taskName: {
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 16,
+    flex: 1,
   },
-  text: {
-    fontSize: 16,
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  priorityText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  taskDetails: {
+    marginBottom: 12,
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  detailText: {
+    marginLeft: 8,
+    fontSize: 14,
     color: "#666",
+  },
+  taskFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
+    paddingTop: 12,
+  },
+  statusPending: {
+    backgroundColor: "#E5E5EA",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusInProgress: {
+    backgroundColor: "#5AC8FA",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusCompleted: {
+    backgroundColor: "#34C759",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });
 

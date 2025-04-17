@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -177,22 +176,6 @@ const MilestonesMap = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.title}>All Milestones</Text>
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={() => router.replace("/milestones/map")}
-        >
-          <Ionicons name="refresh" size={24} color="#0066CC" />
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
@@ -283,28 +266,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: "#555",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    flex: 1,
-    textAlign: "center",
-  },
-  backButton: {
-    padding: 8,
-  },
-  refreshButton: {
-    padding: 8,
   },
   mapContainer: {
     flex: 1,

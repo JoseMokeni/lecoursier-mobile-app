@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MapView, { Marker } from "react-native-maps";
@@ -74,81 +75,82 @@ const Details = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Milestone Details</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-            <Ionicons name="pencil" size={20} color="#0066CC" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? (
-              <ActivityIndicator size="small" color="#FF3B30" />
-            ) : (
-              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ScrollView>
+        <View style={styles.content}>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>{name}</Text>
+              {favorite ? (
+                <Ionicons name="star" size={20} color="#FFD700" />
+              ) : (
+                <Ionicons name="star-outline" size={20} color="#666" />
+              )}
+            </View>
 
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>{name}</Text>
-          {favorite ? (
-            <Ionicons name="star" size={20} color="#FFD700" />
+            <View style={styles.detailsRow}>
+              <Ionicons name="location-outline" size={18} color="#666" />
+              <Text style={styles.detailText}>
+                {hasValidCoordinates
+                  ? `${lat}, ${lng}`
+                  : "Coordinates unavailable"}
+              </Text>
+            </View>
+
+            <View style={styles.detailsRow}>
+              <Ionicons name="calendar-outline" size={18} color="#666" />
+              <Text style={styles.detailText}>{formattedDate}</Text>
+            </View>
+
+            <View style={styles.actions}>
+              <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+                <Ionicons name="pencil-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Edit</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.buttonText}>Delete</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {hasValidCoordinates ? (
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: lat,
+                  longitude: lng,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+              >
+                <Marker
+                  coordinate={{ latitude: lat, longitude: lng }}
+                  title={name}
+                  description={`Created on ${formattedDate}`}
+                  pinColor="#0066CC"
+                />
+              </MapView>
+            </View>
           ) : (
-            <Ionicons name="star-outline" size={20} color="#666" />
+            <View style={styles.noMapContainer}>
+              <Ionicons name="map-outline" size={60} color="#ccc" />
+              <Text style={styles.noMapText}>Map unavailable</Text>
+              <Text style={styles.noMapSubText}>Invalid coordinates</Text>
+            </View>
           )}
         </View>
-
-        <View style={styles.detailsRow}>
-          <Ionicons name="location-outline" size={18} color="#666" />
-          <Text style={styles.detailText}>
-            {hasValidCoordinates ? `${lat}, ${lng}` : "Coordinates unavailable"}
-          </Text>
-        </View>
-
-        <View style={styles.detailsRow}>
-          <Ionicons name="calendar-outline" size={18} color="#666" />
-          <Text style={styles.detailText}>{formattedDate}</Text>
-        </View>
-      </View>
-
-      {hasValidCoordinates ? (
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: lat,
-              longitude: lng,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-          >
-            <Marker
-              coordinate={{ latitude: lat, longitude: lng }}
-              title={name}
-              description={`Created on ${formattedDate}`}
-              pinColor="#0066CC"
-            />
-          </MapView>
-        </View>
-      ) : (
-        <View style={styles.noMapContainer}>
-          <Ionicons name="map-outline" size={60} color="#ccc" />
-          <Text style={styles.noMapText}>Map unavailable</Text>
-          <Text style={styles.noMapSubText}>Invalid coordinates</Text>
-        </View>
-      )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -158,41 +160,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F5F5F5",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-    justifyContent: "space-between",
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+  content: {
     flex: 1,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  deleteButton: {
-    marginLeft: 16,
+    padding: 16,
   },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
     padding: 16,
-    margin: 16,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -223,9 +199,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#555",
   },
-  mapContainer: {
+  actions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
+  },
+  editButton: {
+    backgroundColor: "#0066CC",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
     flex: 1,
-    margin: 16,
+    marginRight: 8,
+  },
+  deleteButton: {
+    backgroundColor: "#FF3B30",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    marginLeft: 8,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    marginLeft: 6,
+  },
+  mapContainer: {
+    height: 300,
     borderRadius: 10,
     overflow: "hidden",
     borderWidth: 1,
@@ -236,13 +246,14 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   noMapContainer: {
-    flex: 1,
+    height: 300,
     justifyContent: "center",
     alignItems: "center",
-    margin: 16,
     backgroundColor: "#FFFFFF",
     borderRadius: 10,
     padding: 20,
+    borderWidth: 1,
+    borderColor: "#DDDDDD",
   },
   noMapText: {
     fontSize: 18,

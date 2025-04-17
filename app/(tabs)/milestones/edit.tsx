@@ -155,16 +155,6 @@ const EditMilestone = () => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Milestone</Text>
-      </View>
-
       <ScrollView style={styles.form}>
         <Text style={styles.label}>Name</Text>
         <TextInput
@@ -296,23 +286,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#FFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    marginLeft: 16,
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
   },
   form: {
     flex: 1,

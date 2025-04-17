@@ -48,6 +48,7 @@ export default function TabLayout() {
         name="milestones"
         options={{
           title: "Milestones",
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <FontAwesome name="flag" size={24} color={color} />
           ),
