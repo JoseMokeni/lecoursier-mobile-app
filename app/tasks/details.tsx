@@ -165,6 +165,22 @@ const TaskDetails = () => {
             </View>
             <Ionicons name="chevron-forward" size={20} color="#0066CC" />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteTaskButton}
+            onPress={handleDelete}
+          >
+            <View style={styles.deleteTaskContent}>
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <Ionicons name="trash-outline" size={20} color="#FFF" />
+              )}
+              {!isDeleting && (
+                <Text style={styles.deleteTaskButtonText}>Delete Task</Text>
+              )}
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -336,6 +352,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
     color: "#333",
+  },
+  deleteTaskButton: {
+    backgroundColor: "#FF3B30",
+    borderRadius: 8,
+    padding: 12,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  deleteTaskContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  deleteTaskButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
   },
 });
 

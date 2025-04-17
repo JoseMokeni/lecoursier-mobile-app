@@ -7,7 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
+  TextInput,
 } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,6 +48,8 @@ const Tasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -55,7 +57,12 @@ const Tasks = () => {
         try {
           setLoading(true);
           const response = await apiService.get("/tasks");
-          setTasks(response.data || []);
+          const tasksData = response.data || [];
+          const sorted = tasksData.sort(
+            (a: Task, b: Task) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setTasks(sorted);
         } catch (err: any) {
           console.error("Error fetching tasks:", err);
           setError(err.message || "Failed to load tasks");
@@ -132,6 +139,17 @@ const Tasks = () => {
     });
   };
 
+  const filteredTasks = tasks
+    .filter((t) => {
+      const q = searchQuery.toLowerCase();
+      return (
+        t.name.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q) ||
+        t.user.username.toLowerCase().includes(q)
+      );
+    })
+    .filter((t) => !statusFilter || t.status.toLowerCase() === statusFilter);
+
   const renderTaskItem = ({ item }: { item: Task }) => (
     <TouchableOpacity
       style={styles.taskItem}
@@ -186,6 +204,39 @@ const Tasks = () => {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search tasks..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
+      <View style={styles.filterChipsContainer}>
+        {[
+          { label: "All", value: "" },
+          { label: "Pending", value: "pending" },
+          { label: "In Progress", value: "in_progress" },
+          { label: "Completed", value: "completed" },
+        ].map(({ label, value }) => (
+          <TouchableOpacity
+            key={value || "all"}
+            style={[styles.chip, statusFilter === value && styles.chipActive]}
+            onPress={() => setStatusFilter(value)}
+          >
+            <Text
+              style={[
+                styles.chipText,
+                statusFilter === value && styles.chipTextActive,
+              ]}
+            >
+              {label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {loading ? (
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color="#0066CC" />
@@ -202,7 +253,7 @@ const Tasks = () => {
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      ) : tasks.length === 0 ? (
+      ) : filteredTasks.length === 0 ? (
         <View style={styles.centerContent}>
           <Ionicons name="clipboard-outline" size={64} color="#CCCCCC" />
           <Text style={styles.emptyText}>No tasks found</Text>
@@ -215,7 +266,7 @@ const Tasks = () => {
         </View>
       ) : (
         <FlatList
-          data={tasks}
+          data={filteredTasks}
           renderItem={renderTaskItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
@@ -374,6 +425,43 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "600",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    paddingHorizontal: 12,
+  },
+  filterChipsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 12,
+  },
+  chip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: "#E5E5EA",
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  chipActive: {
+    backgroundColor: "#0066CC",
+  },
+  chipText: {
+    color: "#333",
+    fontSize: 14,
+  },
+  chipTextActive: {
+    color: "#FFF",
   },
 });
 
