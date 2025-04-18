@@ -179,6 +179,7 @@ const MilestonesMap = () => {
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
+          showsUserLocation={true}
           style={styles.map}
           region={region}
           onRegionChangeComplete={setRegion}

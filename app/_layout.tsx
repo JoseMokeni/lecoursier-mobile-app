@@ -40,7 +40,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="tasks/new"
             options={{
-              headerTitle: "New Task",
+              title: "New Task",
               headerShown: true,
             }}
           />

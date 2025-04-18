@@ -175,6 +175,7 @@ const NewMilestone = () => {
           <MapView
             style={styles.map}
             initialRegion={initialRegion}
+            showsUserLocation={locationPermissionGranted}
             region={initialRegion}
             onPress={handleMapPress}
           >
