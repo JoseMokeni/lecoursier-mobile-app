@@ -127,6 +127,7 @@ const Tasks = () => {
         priority: task.priority,
         status: task.status,
         dueDate: task.dueDate || "",
+        completedAt: task.completedAt || "",
         userId: task.userId.toString(),
         userName: task.user.username,
         milestoneId: task.milestoneId.toString(),

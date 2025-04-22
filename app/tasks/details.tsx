@@ -25,6 +25,7 @@ const TaskDetails = () => {
   const priority = params.priority as string;
   const status = params.status as string;
   const dueDate = params.dueDate as string;
+  const completedAt = params.completedAt as string;
   const userId = params.userId as string;
   const userName = params.userName as string;
   const milestoneId = params.milestoneId as string;
@@ -109,6 +110,12 @@ const TaskDetails = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const formatDateWithTime = (dateString: string) => {
+    if (!dateString) return "Not set";
+    const date = new Date(dateString);
+    return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content}>
@@ -145,6 +152,15 @@ const TaskDetails = () => {
               <Text style={styles.detailLabel}>Due Date:</Text>
               <Text style={styles.detailValue}>{formatDate(dueDate)}</Text>
             </View>
+
+            {status === "completed" && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Completed At:</Text>
+                <Text style={styles.detailValue}>
+                  {formatDateWithTime(completedAt)}
+                </Text>
+              </View>
+            )}
 
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Assigned To:</Text>
