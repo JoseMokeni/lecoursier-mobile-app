@@ -182,21 +182,23 @@ const TaskDetails = () => {
             <Ionicons name="chevron-forward" size={20} color="#0066CC" />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.deleteTaskButton}
-            onPress={handleDelete}
-          >
-            <View style={styles.deleteTaskContent}>
-              {isDeleting ? (
-                <ActivityIndicator size="small" color="#FFF" />
-              ) : (
-                <Ionicons name="trash-outline" size={20} color="#FFF" />
-              )}
-              {!isDeleting && (
-                <Text style={styles.deleteTaskButtonText}>Delete Task</Text>
-              )}
-            </View>
-          </TouchableOpacity>
+          {status === "pending" && (
+            <TouchableOpacity
+              style={styles.deleteTaskButton}
+              onPress={handleDelete}
+            >
+              <View style={styles.deleteTaskContent}>
+                {isDeleting ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Ionicons name="trash-outline" size={20} color="#FFF" />
+                )}
+                {!isDeleting && (
+                  <Text style={styles.deleteTaskButtonText}>Delete Task</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

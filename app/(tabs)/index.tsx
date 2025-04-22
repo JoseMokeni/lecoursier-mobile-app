@@ -51,27 +51,38 @@ const Tasks = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
+  // Extract fetchTasks function so it can be reused
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.get("/tasks");
+      const tasksData = response.data || [];
+      const sorted = tasksData.sort(
+        (a: Task, b: Task) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setTasks(sorted);
+      setError(null);
+    } catch (err: any) {
+      console.error("Error fetching tasks:", err);
+      setError(err.message || "Failed to load tasks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
-      const fetchTasks = async () => {
-        try {
-          setLoading(true);
-          const response = await apiService.get("/tasks");
-          const tasksData = response.data || [];
-          const sorted = tasksData.sort(
-            (a: Task, b: Task) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setTasks(sorted);
-        } catch (err: any) {
-          console.error("Error fetching tasks:", err);
-          setError(err.message || "Failed to load tasks");
-        } finally {
-          setLoading(false);
-        }
-      };
-
+      // Initial fetch
       fetchTasks();
+
+      // Set up interval to fetch tasks every 15 seconds
+      const interval = setInterval(() => {
+        fetchTasks();
+      }, 15000);
+
+      // Clean up interval when component is unfocused
+      return () => clearInterval(interval);
     }, [])
   );
 
