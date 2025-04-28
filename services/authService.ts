@@ -39,7 +39,7 @@ const authService = {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 401) {
           return {
-            error: "Invalid creadentials",
+            error: "Invalid credentials",
           };
         }
         throw new Error(
