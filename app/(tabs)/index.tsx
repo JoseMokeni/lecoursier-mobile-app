@@ -282,6 +282,8 @@ const Tasks = () => {
           renderItem={renderTaskItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
+          onRefresh={fetchTasks}
+          refreshing={loading}
         />
       )}
     </View>
