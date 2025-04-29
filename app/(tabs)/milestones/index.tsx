@@ -44,23 +44,22 @@ const Milestones = () => {
     return responseData || [];
   };
 
+  const fetchMilestones = async () => {
+    try {
+      console.log("Fetching milestones...");
+
+      const data = await apiService.get("/milestones");
+      console.log("Fetched milestones:", data);
+      setMilestones(processMilestoneData(data));
+    } catch (error: any) {
+      console.error("Error fetching milestones:", error);
+      setError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
   useFocusEffect(
     useCallback(() => {
-      const fetchMilestones = async () => {
-        try {
-          console.log("Fetching milestones...");
-
-          const data = await apiService.get("/milestones");
-          console.log("Fetched milestones:", data);
-          setMilestones(processMilestoneData(data));
-        } catch (error: any) {
-          console.error("Error fetching milestones:", error);
-          setError(error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
       fetchMilestones();
 
       return () => {
@@ -299,6 +298,8 @@ const Milestones = () => {
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          onRefresh={fetchMilestones}
+          refreshing={loading}
         />
       )}
 
