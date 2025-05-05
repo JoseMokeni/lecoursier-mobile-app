@@ -77,6 +77,8 @@ const Tasks = () => {
   };
 
   useEffect(() => {
+    fetchTasks();
+
     let channel: any = null;
     let isMounted = true;
 
@@ -147,14 +149,10 @@ const Tasks = () => {
 
   useFocusEffect(
     useCallback(() => {
-      // Initial fetch
-      fetchTasks();
-
       // Set up interval to fetch tasks every 15 seconds
       // const interval = setInterval(() => {
       //   fetchTasks();
       // }, 15000);
-
       // // Clean up interval when component is unfocused
       // return () => clearInterval(interval);
     }, [])
