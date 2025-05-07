@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import apiService from "../../../services/apiService";
 
@@ -133,6 +133,9 @@ const Details = () => {
                   latitudeDelta: 0.01,
                   longitudeDelta: 0.01,
                 }}
+                provider={PROVIDER_GOOGLE}
+                showsMyLocationButton={true}
+                showsUserLocation={true}
               >
                 <Marker
                   coordinate={{ latitude: lat, longitude: lng }}
