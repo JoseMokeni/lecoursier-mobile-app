@@ -142,6 +142,7 @@ const LoginScreen = () => {
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
+                testID="toggle-password-visibility"
               >
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
