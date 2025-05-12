@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import apiService from "../../services/apiService";
 import Pusher from "pusher-js/react-native";
 import authService from "@/services/authService";
+import Toast from "react-native-toast-message";
+import { Audio } from "expo-av";
 
 interface Task {
   id: number;
@@ -76,6 +78,36 @@ const Tasks = () => {
     }
   };
 
+  const playNotificationSound = async (type: string) => {
+    try {
+      if (type === "created") {
+        const { sound } = await Audio.Sound.createAsync(
+          // This is the default system notification sound for Expo
+          require("@/assets/sounds/created.wav")
+        );
+        await sound.playAsync();
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isLoaded || status.didJustFinish) {
+            sound.unloadAsync();
+          }
+        });
+      } else if (type === "deleted") {
+        const { sound } = await Audio.Sound.createAsync(
+          // This is the default system notification sound for Expo
+          require("@/assets/sounds/deleted.wav")
+        );
+        await sound.playAsync();
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isLoaded || status.didJustFinish) {
+            sound.unloadAsync();
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to play notification sound", e);
+    }
+  };
+
   useEffect(() => {
     fetchTasks();
 
@@ -108,22 +140,48 @@ const Tasks = () => {
       channel.bind("App\\Events\\TaskUpdated", (data: any) => {
         console.log("Task updated:", data);
         const updatedTask = data.task;
+        // Show toast
+        Toast.show({
+          type: "info",
+          text1: "Task Updated",
+          text2: updatedTask.name,
+          position: "top",
+          visibilityTime: 3000,
+        });
         setTasks((prevTasks) =>
           prevTasks.map((task) =>
             task.id === updatedTask.id ? { ...task, ...updatedTask } : task
           )
         );
       });
-      channel.bind("App\\Events\\TaskCreated", (data: any) => {
+      channel.bind("App\\Events\\TaskCreated", async function (data: any) {
         console.log("Task created:", data);
         const newTask = data.task;
+        // Show toast and play sound
+        Toast.show({
+          type: "success",
+          text1: "New Task Created",
+          text2: newTask.name,
+          position: "top",
+          visibilityTime: 3000,
+        });
+        await playNotificationSound("created");
         if (isMounted) {
           setTasks((prevTasks) => [newTask, ...prevTasks]);
         }
       });
-      channel.bind("App\\Events\\TaskDeleted", (data: any) => {
+      channel.bind("App\\Events\\TaskDeleted", async (data: any) => {
         console.log("Task deleted:", data);
         const deletedTaskId = data.taskId;
+        // Show toast and play sound
+        Toast.show({
+          type: "error",
+          text1: "Task Deleted",
+          text2: `Task #${deletedTaskId} was removed`,
+          position: "top",
+          visibilityTime: 3000,
+        });
+        await playNotificationSound("deleted");
         if (isMounted) {
           setTasks((prevTasks) =>
             prevTasks.filter((task) => task.id !== deletedTaskId)
@@ -358,6 +416,7 @@ const Tasks = () => {
           refreshing={loading}
         />
       )}
+      <Toast />
     </View>
   );
 };
