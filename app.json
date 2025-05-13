@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Le Coursier Admin",
-    "slug": "lecoursier-mobile-app-admin",
+    "slug": "le-coursier-admin",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,9 +15,6 @@
         "googleMapsApiKey": ""
       },
       "googleServicesFile": "./GoogleService-Info.plist"
-      // "entitlements": {
-      //   "aps-environment": "production"
-      // }
     },
     "android": {
       "adaptiveIcon": {
@@ -53,6 +50,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4003cbb9-61c4-4be3-968b-38f0ab5d9bba"
+      }
+    },
+    "owner": "jmmokeni-org"
   }
 }
