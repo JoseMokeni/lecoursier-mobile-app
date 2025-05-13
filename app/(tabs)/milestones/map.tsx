@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker, Callout } from "react-native-maps";
+import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import apiService from "../../../services/apiService";
 
@@ -183,6 +183,7 @@ const MilestonesMap = () => {
           style={styles.map}
           region={region}
           onRegionChangeComplete={setRegion}
+          provider={PROVIDER_GOOGLE}
         >
           {milestones.map((milestone) => {
             const lat = parseFloat(milestone.latitudinal);

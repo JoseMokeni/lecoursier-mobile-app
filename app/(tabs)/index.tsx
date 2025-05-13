@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -12,6 +12,10 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import apiService from "../../services/apiService";
+import Pusher from "pusher-js/react-native";
+import authService from "@/services/authService";
+import Toast from "react-native-toast-message";
+import { Audio } from "expo-av";
 
 interface Task {
   id: number;
@@ -50,10 +54,13 @@ const Tasks = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const pusherRef = useRef<Pusher | null>(null);
 
   // Extract fetchTasks function so it can be reused
   const fetchTasks = async () => {
     try {
+      console.log("Fetching tasks...");
+
       setLoading(true);
       const response = await apiService.get("/tasks");
       const tasksData = response.data || [];
@@ -71,18 +78,141 @@ const Tasks = () => {
     }
   };
 
+  const playNotificationSound = async (type: string) => {
+    try {
+      if (type === "created") {
+        const { sound } = await Audio.Sound.createAsync(
+          // This is the default system notification sound for Expo
+          require("@/assets/sounds/created.wav")
+        );
+        await sound.playAsync();
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isLoaded || status.didJustFinish) {
+            sound.unloadAsync();
+          }
+        });
+      } else if (type === "deleted") {
+        const { sound } = await Audio.Sound.createAsync(
+          // This is the default system notification sound for Expo
+          require("@/assets/sounds/deleted.wav")
+        );
+        await sound.playAsync();
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isLoaded || status.didJustFinish) {
+            sound.unloadAsync();
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to play notification sound", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+
+    let channel: any = null;
+    let isMounted = true;
+
+    const setupPusher = async () => {
+      const COMPANY_CODE = await authService.getCompanyCode();
+      // log all the env vars used bellow with types
+      console.log("Pusher App Key:", process.env.EXPO_PUBLIC_PUSHER_APP_KEY);
+      console.log("Pusher Host:", process.env.EXPO_PUBLIC_PUSHER_HOST);
+      console.log("Pusher Port:", process.env.EXPO_PUBLIC_PUSHER_PORT);
+      console.log("Pusher Cluster:", process.env.EXPO_PUBLIC_PUSHER_CLUSTER);
+      console.log("Company Code:", COMPANY_CODE);
+      const pusher = new Pusher(
+        process.env.EXPO_PUBLIC_PUSHER_APP_KEY || "lecoursier",
+        {
+          wsHost: process.env.EXPO_PUBLIC_PUSHER_HOST || "10.0.2.2",
+          wsPort: parseInt(process.env.EXPO_PUBLIC_PUSHER_PORT || "6001", 10),
+          wssPort: parseInt(process.env.EXPO_PUBLIC_PUSHER_PORT || "6001", 10),
+          forceTLS: false,
+          disableStats: true,
+          enabledTransports: ["ws"],
+          cluster: process.env.EXPO_PUBLIC_PUSHER_CLUSTER || "mt1",
+        }
+      );
+      pusherRef.current = pusher;
+
+      const channel = pusher.subscribe(`tasks.${COMPANY_CODE}`);
+      channel.bind("App\\Events\\TaskUpdated", (data: any) => {
+        console.log("Task updated:", data);
+        const updatedTask = data.task;
+        // Show toast
+        Toast.show({
+          type: "info",
+          text1: "Task Updated",
+          text2: updatedTask.name,
+          position: "top",
+          visibilityTime: 3000,
+        });
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === updatedTask.id ? { ...task, ...updatedTask } : task
+          )
+        );
+      });
+      channel.bind("App\\Events\\TaskCreated", async function (data: any) {
+        console.log("Task created:", data);
+        const newTask = data.task;
+        // Show toast and play sound
+        Toast.show({
+          type: "success",
+          text1: "New Task Created",
+          text2: newTask.name,
+          position: "top",
+          visibilityTime: 3000,
+        });
+        await playNotificationSound("created");
+        if (isMounted) {
+          setTasks((prevTasks) => [newTask, ...prevTasks]);
+        }
+      });
+      channel.bind("App\\Events\\TaskDeleted", async (data: any) => {
+        console.log("Task deleted:", data);
+        const deletedTaskId = data.taskId;
+        // Show toast and play sound
+        Toast.show({
+          type: "error",
+          text1: "Task Deleted",
+          text2: `Task #${deletedTaskId} was removed`,
+          position: "top",
+          visibilityTime: 3000,
+        });
+        await playNotificationSound("deleted");
+        if (isMounted) {
+          setTasks((prevTasks) =>
+            prevTasks.filter((task) => task.id !== deletedTaskId)
+          );
+        }
+      });
+    };
+
+    setupPusher();
+
+    return () => {
+      isMounted = false;
+      if (channel) {
+        channel.unbind_all();
+        channel.unsubscribe();
+      }
+      if (pusherRef.current) {
+        pusherRef.current.disconnect();
+        pusherRef.current = null;
+      }
+    };
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      // Initial fetch
-      fetchTasks();
-
       // Set up interval to fetch tasks every 15 seconds
-      const interval = setInterval(() => {
-        fetchTasks();
-      }, 15000);
-
-      // Clean up interval when component is unfocused
-      return () => clearInterval(interval);
+      // const interval = setInterval(() => {
+      //   fetchTasks();
+      // }, 15000);
+      // // Clean up interval when component is unfocused
+      // return () => clearInterval(interval);
     }, [])
   );
 
@@ -282,8 +412,11 @@ const Tasks = () => {
           renderItem={renderTaskItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
+          onRefresh={fetchTasks}
+          refreshing={loading}
         />
       )}
+      <Toast />
     </View>
   );
 };

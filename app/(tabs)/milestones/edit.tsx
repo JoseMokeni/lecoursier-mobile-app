@@ -13,7 +13,11 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker, MapPressEvent } from "react-native-maps";
+import MapView, {
+  Marker,
+  MapPressEvent,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
 import * as Location from "expo-location";
 import apiService from "../../../services/apiService";
 
@@ -172,6 +176,7 @@ const EditMilestone = () => {
             style={styles.map}
             initialRegion={initialRegion}
             onPress={handleMapPress}
+            provider={PROVIDER_GOOGLE}
           >
             {markerPosition && (
               <Marker

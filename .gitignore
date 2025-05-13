@@ -40,3 +40,10 @@ yarn-error.*
 app-example
 
 .env
+
+android
+ios
+
+google-services.json
+
+GoogleService-Info.plist

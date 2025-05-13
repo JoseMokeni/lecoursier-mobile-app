@@ -14,7 +14,11 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import MapView, { Marker, MapPressEvent } from "react-native-maps";
+import MapView, {
+  Marker,
+  MapPressEvent,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
 import * as Location from "expo-location";
 import apiService from "../../../services/apiService";
 
@@ -83,37 +87,6 @@ const NewMilestone = () => {
     setLongitude(coordinate.longitude.toString());
   };
 
-  // Center map on current location
-  const goToCurrentLocation = async () => {
-    if (!locationPermissionGranted) {
-      Alert.alert(
-        "Permission denied",
-        "Location permission is required to get your current position"
-      );
-      return;
-    }
-
-    try {
-      const location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-
-      setInitialRegion({
-        latitude,
-        longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
-
-      // Optional: also set the marker to current position
-      // setMarkerPosition({ latitude, longitude });
-      // setLatitude(latitude.toString());
-      // setLongitude(longitude.toString());
-    } catch (error) {
-      console.error("Error getting current location:", error);
-      Alert.alert("Error", "Failed to get your current location");
-    }
-  };
-
   const handleSubmit = async () => {
     if (!name.trim()) {
       Alert.alert(
@@ -178,6 +151,8 @@ const NewMilestone = () => {
             showsUserLocation={locationPermissionGranted}
             region={initialRegion}
             onPress={handleMapPress}
+            provider={PROVIDER_GOOGLE}
+            showsMyLocationButton={true}
           >
             {markerPosition && (
               <Marker
@@ -192,12 +167,6 @@ const NewMilestone = () => {
               />
             )}
           </MapView>
-          <TouchableOpacity
-            style={styles.currentLocationButton}
-            onPress={goToCurrentLocation}
-          >
-            <Ionicons name="locate" size={24} color="#0066CC" />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.coordinatesContainer}>

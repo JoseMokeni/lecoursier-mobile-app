@@ -3,6 +3,7 @@ import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useColorScheme, TouchableOpacity } from "react-native";
 import Colors from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
+import Toast from "react-native-toast-message";
 
 /**
  * Tab navigation layout for the app
