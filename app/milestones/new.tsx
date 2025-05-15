@@ -20,7 +20,7 @@ import MapView, {
   PROVIDER_GOOGLE,
 } from "react-native-maps";
 import * as Location from "expo-location";
-import apiService from "../../../services/apiService";
+import apiService from "@/services/apiService";
 
 const { width } = Dimensions.get("window");
 

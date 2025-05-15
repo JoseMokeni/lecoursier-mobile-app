@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
-import apiService from "../../../services/apiService";
+import apiService from "@/services/apiService";
 
 const Details = () => {
   const router = useRouter();

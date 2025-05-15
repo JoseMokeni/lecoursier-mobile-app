@@ -11,7 +11,7 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import apiService from "../../../services/apiService";
+import apiService from "../../services/apiService";
 
 interface Milestone {
   id: number;
@@ -25,7 +25,7 @@ interface Milestone {
 
 type SortOption = "nameAsc" | "nameDesc" | "dateAsc" | "dateDesc";
 
-const Milestones = () => {
+const MilestonesList = () => {
   const router = useRouter();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [filteredMilestones, setFilteredMilestones] = useState<Milestone[]>([]);
@@ -531,4 +531,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Milestones;
+export default MilestonesList;

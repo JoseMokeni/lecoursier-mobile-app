@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
-import apiService from "../../../services/apiService";
+import apiService from "@/services/apiService";
 
 interface Milestone {
   id: number;

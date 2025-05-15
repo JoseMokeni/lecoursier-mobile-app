@@ -46,6 +46,19 @@ export default function RootLayout() {
                 headerShown: true,
               }}
             />
+            <Stack.Screen
+              name="milestones/new"
+              options={{ title: "New Milestone", headerShown: true }}
+            />
+            <Stack.Screen
+              name="milestones/edit"
+              options={{ title: "Edit Milestone" }}
+            />
+            <Stack.Screen
+              name="milestones/details"
+              options={{ title: "Milestone Details", headerShown: true }}
+            />
+            <Stack.Screen name="milestones/map" options={{ title: "Map" }} />
           </Stack>
         </AuthGuard>
       </FcmProvider>
